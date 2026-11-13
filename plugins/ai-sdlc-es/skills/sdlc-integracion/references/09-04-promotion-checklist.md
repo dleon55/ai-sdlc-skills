@@ -1,0 +1,215 @@
+# 9.4 — Promotion checklist: integración y despliegue entre ambientes
+
+## Descripción
+
+Prompt para planificar y documentar la promoción de cambios entre ambientes (dev → qa → staging → prod): verificaciones previas, pasos de despliegue, validaciones post-despliegue, criterios de go/no-go y plan de rollback. Incluye consideraciones para entornos con agentes IA operando.
+
+**Cuándo usarlo:** antes de cualquier despliegue a un ambiente superior, especialmente antes de ir a producción. También útil para definir el proceso estándar de promotion del proyecto.
+
+---
+
+## Contrato editorial
+
+| Campo | Valor |
+|---|---|
+| Tipo | operación |
+| Riesgo esperado | alto — el checklist determina el go/no-go de un despliegue que puede incluir migraciones de base de datos, cambios de infraestructura y llegar a producción |
+| Entradas requeridas | referencia al issue/PR, rama fuente, ambiente origen y destino, stack de despliegue, indicación de si hay migraciones de BD, cambios de infraestructura o de variables de entorno |
+| Herramientas permitidas | lectura de CHANGELOG, diff del PR, runbooks y documentación de arquitectura — sin ejecutar el despliegue, comandos contra el ambiente destino ni acciones de rollback reales |
+| Autonomía permitida | A1 — Proponer (genera el checklist y el semáforo go/no-go; la ejecución del despliegue y del rollback requiere A3 explícito por el responsable de release) |
+| Criterios de detención | si no hay responsable de rollback disponible, si hay migraciones de BD sin backup confirmado, o si se cumple alguna condición NO-GO explícita del punto 2, detener y no recomendar continuar con el despliegue |
+| Salida esperada | ver `## Salida esperada` |
+| Evidencia mínima | cada ítem del semáforo go/no-go debe quedar marcado con su estado (🟢/🔴) y una observación que lo justifique |
+| Siguiente prompt recomendado | `08-01-revision-completa-pr` antes de ejecutar la promoción, para confirmar que el pipeline del cambio está en verde y el veredicto de merge es favorable |
+
+---
+
+## Contexto obligatorio previo
+
+> Incluye el bloque del archivo `00-framework.md` antes de este prompt.
+
+---
+
+## Prompt completo
+
+```text
+Objetivo:
+Genera el checklist completo de promotion para el despliegue de este cambio entre ambientes.
+
+Inputs requeridos:
+- repositorio: [NOMBRE O URL]
+- cambio a desplegar: [REFERENCIA AL ISSUE O PR]
+- rama fuente: [RAMA CON LOS CAMBIOS]
+- ambiente origen: [DEV / QA / STAGING]
+- ambiente destino: [QA / STAGING / PROD]
+- stack de despliegue: [Docker / Kubernetes / VM / GCP / AWS / otro]
+- hay migraciones de base de datos: [SÍ / NO]
+- hay cambios de infraestructura: [SÍ / NO]
+- hay cambios en variables de entorno: [SÍ / NO]
+
+Restricciones:
+- ningún ítem del checklist puede marcarse como cumplido u omitirse sin el sign-off explícito de la persona responsable de esa área (código, base de datos, infraestructura) — "no aplica" también requiere justificación explícita, no puede quedar en blanco.
+- la decisión de promoción es todo o nada: no propongas ni ejecutes una promoción parcial (por ejemplo, desplegar el código pero posponer la migración de base de datos) sin señalar explícitamente el riesgo de dejar los ambientes en estados inconsistentes.
+- no recomiendes GO si no existe un plan de rollback verificado y con responsable asignado — la sola intención de hacer rollback no cuenta como plan.
+- si el ambiente destino es PROD, todo comando de despliegue y de rollback queda propuesto y pendiente de aprobación explícita del responsable de release; este prompt no ejecuta el despliegue por sí mismo.
+
+Entrega:
+
+## 1. VERIFICACIONES PREVIAS AL DESPLIEGUE (pre-flight)
+### Código y calidad
+- [ ] El PR está aprobado por al menos [N] revisores
+- [ ] CI/CD pasa en verde: lint, build, tests, coverage
+- [ ] No hay secrets ni credenciales expuestas en el diff
+- [ ] Revisión de seguridad básica completada (OWASP Top 10 aplicable)
+- [ ] Deuda técnica nueva documentada en backlog
+- [ ] CHANGELOG.md actualizado con el cambio
+
+### Base de datos (si aplica)
+- [ ] Migraciones revisadas y probadas en el ambiente origen
+- [ ] Backup del ambiente destino realizado ANTES del despliegue
+- [ ] Las migraciones son reversibles o se tiene rollback de datos
+- [ ] Scripts de migración probados con dataset representativo
+
+### Variables de entorno (si aplica)
+- [ ] Nuevas variables documentadas en .env.example
+- [ ] Variables configuradas en el ambiente destino ANTES del despliegue
+- [ ] Secretos gestionados en el gestor de secretos (Vault / GitHub Secrets)
+
+### Infraestructura (si aplica)
+- [ ] Cambios de infraestructura revisados por el responsable
+- [ ] Recursos necesarios disponibles (CPU, memoria, almacenamiento)
+- [ ] Configuración de red y firewall validada
+
+### Para agentes IA (si participaron en el cambio)
+- [ ] Validación humana del output del agente completada
+- [ ] El PR solo toca los archivos del alcance autorizado
+- [ ] No hay instrucciones del agente en comentarios del código
+
+## 2. CRITERIOS GO / NO-GO
+Define explícitamente qué condiciones DEBEN cumplirse para continuar:
+
+### ✅ GO — Continuar si:
+- todos los checks del punto 1 están marcados
+- pruebas de humo del ambiente origen pasan
+- la ventana de mantenimiento está activa (si aplica)
+- hay responsable de rollback disponible durante el despliegue
+
+### 🔴 NO-GO — Detener si:
+- algún check crítico del punto 1 falla
+- el ambiente destino tiene incidentes activos
+- no hay responsable disponible para rollback
+- el momento del despliegue cae dentro de una ventana de congelamiento (freeze) definida explícitamente por el equipo (ej. viernes por la tarde, víspera de un evento comercial, fin de periodo fiscal) — si no se proveyó una política de ventanas de congelamiento como entrada, no asumas ninguna por tu cuenta; señálalo como dato no provisto en vez de aplicar un criterio propio de qué cuenta como "fecha importante"
+
+## 3. PASOS DE DESPLIEGUE
+Secuencia exacta y ordenada de comandos o acciones para este cambio.
+Por cada paso indica:
+- descripción de la acción
+- comando o procedimiento exacto
+- resultado esperado
+- cómo verificar que el paso fue exitoso
+- acción de rollback de ese paso si falla
+
+## 4. VALIDACIONES POST-DESPLIEGUE (smoke test mínimo)
+- [ ] Aplicación responde HTTP 200 en la URL del ambiente destino
+- [ ] Flujos críticos funcionan: [LISTA ESPECÍFICA PARA ESTE CAMBIO]
+- [ ] Logs no muestran errores nuevos en los primeros 5 minutos
+- [ ] Métricas de performance dentro de los umbrales normales
+- [ ] No hay alertas activas en el sistema de monitoreo
+
+## 5. VENTANA DE OBSERVACIÓN
+- Tiempo de observación recomendado post-despliegue: [X horas]
+- Criterios para cerrar el cambio como exitoso:
+  - cero incidentes en la ventana de observación
+  - métricas estables
+  - validación del solicitante del cambio
+
+## 6. PLAN DE ROLLBACK
+- Cuándo ejecutar rollback: [condiciones concretas]
+- Pasos de rollback ordenados (inverso al despliegue):
+  1. [Paso 1]
+  2. [Paso 2]
+  ...
+- Tiempo estimado de rollback: [X minutos]
+- Responsable del rollback: [ROL]
+- Notificación post-rollback: [a quién y por qué canal]
+
+## 7. COMUNICACIÓN
+- Notificar ANTES del despliegue a: [LISTA]
+- Notificar al COMPLETAR a: [LISTA]
+- Canal de comunicación de incidentes: [CANAL]
+- Decisión de rollback la toma: [ROL / PERSONA]
+```
+
+---
+
+## Uso con fórmula estándar
+
+```text
+Usa el prompt de promotion checklist y adáptalo a:
+- repositorio: [NOMBRE O URL]
+- cambio: [REFERENCIA AL ISSUE O PR]
+- rama fuente: [RAMA]
+- ambiente origen → destino: [ORIGEN → DESTINO]
+- stack de despliegue: [STACK]
+- migraciones de BD: [SÍ / NO]
+- cambios de infraestructura: [SÍ / NO]
+- documentos a revisar: CHANGELOG, PR diff, runbooks/, arquitectura
+- objetivo puntual de salida: checklist completo go/no-go + pasos de despliegue + plan de rollback
+- nivel de profundidad: alto
+```
+
+---
+
+## Salida esperada
+
+### Resumen del cambio a desplegar
+
+| Campo | Valor |
+|---|---|
+| Issue / PR | #[N] |
+| Rama | [RAMA] |
+| Ambiente destino | [AMBIENTE] |
+| Tipo de cambio | feat / fix / refactor / ops |
+| Migraciones BD | Sí / No |
+| Cambios infra | Sí / No |
+| Estimación ventana | [X] minutos de downtime esperado |
+| Responsable | [NOMBRE] |
+| Rollback disponible | Sí / No |
+
+### Semáforo de go/no-go
+
+| Área | Estado | Observación |
+|---|---|---|
+| CI/CD verde | 🟢 / 🔴 | |
+| Backup BD | 🟢 / 🔴 | |
+| Revisores aprobaron | 🟢 / 🔴 | |
+| Ambiente destino estable | 🟢 / 🔴 | |
+| Responsable rollback presente | 🟢 / 🔴 | |
+| **Decisión** | **GO / NO-GO** | |
+
+### Ejemplo aplicado
+
+| Campo | Valor |
+|---|---|
+| Issue / PR | #482 |
+| Rama | release/2026-03-12 |
+| Ambiente destino | PROD |
+| Tipo de cambio | fix |
+| Migraciones BD | Sí — agrega índice a `orders.customer_id` |
+| Cambios infra | No |
+| Estimación ventana | 5 minutos de downtime esperado (rolling deploy) |
+| Responsable | María Ibáñez (release owner) |
+| Rollback disponible | Sí — revert del deploy anterior en < 3 min |
+
+| Área | Estado | Observación |
+|---|---|---|
+| CI/CD verde | 🟢 | pipeline #1203 pasó lint, tests y coverage 87% |
+| Backup BD | 🟢 | snapshot `orders-prod-20260312-1400` confirmado |
+| Revisores aprobaron | 🟢 | 2/2 aprobaciones (requerido: 2) |
+| Ambiente destino estable | 🟢 | sin incidentes activos, tasa de error 0.05% |
+| Responsable rollback presente | 🟢 | María Ibáñez disponible en canal #deploys hasta las 17:00 |
+| **Decisión** | **GO** | todos los checks en verde, ventana de mantenimiento activa |
+
+---
+
+*Fuente: AI-SDLC Pro (https://prompts.lionsystems.com.mx), licencia CC BY 4.0. Adaptado al formato SKILL.md: se añadió esta nota; el texto del prompt no cambió. Versión con proyectos, variables persistentes y resultados por prompt: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*

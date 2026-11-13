@@ -1,0 +1,106 @@
+# 6.2 — Quality commit message generation
+
+## Description
+
+Prompt to generate small, clear and traceable commit messages, aligned with the project standard. Includes alternatives if the change should be divided into multiple commits.
+
+**When to use it:** before committing any change, to guarantee traceability and consistency with the repository history.
+
+---
+
+## Editorial Contract
+
+| Field | Value |
+|---|---|
+| Type | documentation |
+| Expected risk | low — only drafts text over an already-existing diff, does not execute changes |
+| Required inputs | issue, change type, component, brief description of the change already made |
+| Allowed tools | none for execution — text drafting only |
+| Permitted autonomy | A1 — Propose (the actual commit/push is run by the standard git flow, not this prompt) |
+| Stop criteria | if the described change mixes unrelated intentions, stop and recommend splitting into separate commits before proposing the final message |
+| Expected output | see `## Expected output` |
+| Minimum evidence | commit message valid under Conventional Commits (see `CONTRIBUTING.md`) |
+| Recommended next prompt | none for the commit itself — this is the last step before `git push`; before merging the PR, run `08-01-revision-completa-pr` as a final quality gate |
+
+---
+
+## Mandatory previous context
+
+> Include the block from the `00-framework.md` file before this prompt.
+
+---
+
+## Complete prompt
+
+```text
+Objective:
+Generate small, clear, traceable commit messages aligned with the project standard.
+
+Inputs:
+- issue,
+- change type,
+- component,
+- brief description.
+
+Constraints:
+- never bundle functionally or technically unrelated changes into a single commit; if the brief description mixes two distinct intentions, recommend splitting before proposing the final message,
+- never suggest rewriting already-published history (`git rebase`, `git commit --amend`, `git push --force`) without explicit human approval — the proposed message is for a new commit, not for modifying an existing one,
+- strictly follow the Conventional Commits format (`type(component): description #issue`), using only the types defined in `CONTRIBUTING.md` (feat, fix, refactor, docs, test, chore, among others allowed),
+- do not invent an issue number or component if they were not provided in the inputs; mark it as pending completion instead of assuming it.
+
+Deliver:
+1. suggested main commit
+2. alternative commits if the change should be divided
+3. justification of why it is convenient to divide the work
+```
+
+---
+
+## Use with standard formula
+
+```text
+Use the commit messages prompt and adapt it to:
+- issue: [NUMBER OR REFERENCE]
+- change type: [feat / fix / refactor / docs / test / chore]
+- component: [AFFECTED MODULE OR FILE]
+- brief description: [WHAT WAS DONE IN ONE LINE]
+- specific output objective: main commit + alternatives if applicable to divide
+```
+
+### Real example
+
+```text
+Use the commit messages prompt and adapt it to:
+- issue: #842
+- change type: fix
+- component: api/notifications
+- brief description: fixes duplicate push notification sending when updating order
+```
+
+---
+
+## Recommended commit formats
+
+```text
+fix(api/notifications): fixes duplicate sending when updating order #842
+
+feat(auth): adds token expiration validation in middleware #123
+
+refactor(db): extracts user query to separate repository #456
+
+docs(readme): updates deployment instructions in Docker #78
+
+test(payments): adds edge cases for negative amount in processor #99
+```
+
+## Expected output
+
+| Commit | Description | Justification |
+|---|---|---|
+| Main | `fix(api/notifications): fixes duplicate sending when updating order #842` | Isolates the functional fix requested in the issue; it's the minimal change needed to resolve #842 |
+| Alternative 1 | `refactor(api/notifications): extracts deduplication logic into a utility function` | The original diff included an unrequested refactor; split out to avoid mixing fix intent with a design improvement |
+| Alternative 2 | `chore(logging): adds debug logging in notifications service` | Logging added during investigation is not part of the fix; it belongs in a separate commit or should be dropped before merging |
+
+---
+
+*Source: AI-SDLC Pro (https://prompts.lionsystems.com.mx), CC BY 4.0 license. Adapted to the SKILL.md format: this note was added; the prompt text is unchanged. Version with projects, persistent variables and per-prompt results: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*

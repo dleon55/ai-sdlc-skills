@@ -1,0 +1,272 @@
+# 2.4 — GitHub Issues backlog triage and planning
+
+## Description
+
+Composite prompt to analyze a set of GitHub issues from the current repository or a target repository, filtered by component, assignee, labels, or pending status. It helps classify the backlog, detect logical groupings, prioritize attention, and propose an implementation or remediation plan aligned with the project's methodology, architecture, and standards.
+
+**When to use it:** when you need to review open or pending issues as a work portfolio, order their attention by priority or component, or prepare a master execution plan for a sprint, remediation, or stabilization effort.
+
+---
+
+## Editorial Contract
+
+| Field | Value |
+|---|---|
+| Type | analysis |
+| Expected risk | medium — the result influences a team's actual prioritization and work assignment; consolidating or recommending closure without evidence can discard valid issues, although the prompt does not close or modify issues itself |
+| Required inputs | issues source (e.g., `gh issue list` JSON output), applied filter, pending backlog criteria, target component or owner, target branch and environment, documents to review |
+| Allowed tools | reading of issues, PRs, branches, and documentation via read-only queries (`gh issue list` or equivalent) — no closing, labeling, assigning, or modifying issues |
+| Permitted autonomy | A1 — Propose |
+| Stop criteria | do not propose closing issues without evidence; if an issue's information is not enough to classify it precisely, state it as an assumption and lower the confidence level instead of assigning it a definitive priority |
+| Expected output | see `## Expected output` |
+| Minimum evidence | every row of the normalized issues matrix must be traceable to actual cited GitHub data (number, status, labels, assignee) |
+| Recommended next prompt | `05-01-plan-implementacion` for issues ready to implement; `02-01-analisis-issue` for those requiring functional clarification |
+
+---
+
+## Mandatory previous context
+
+> Include the block from the `00-framework.md` file before this prompt.
+
+---
+
+## Complete prompt
+
+```text
+Objective:
+Analyze the GitHub Issues backlog associated with the indicated repository and generate a structured diagnosis, a management-oriented categorization, and a prioritized, controlled, traceable attention plan.
+
+Context:
+- Work occurs in a multi-agent environment.
+- Do not assume the state of the repository, branches, or issues is static.
+- Before issuing recommendations, consider documentation, processes, active branches, CI/CD, concurrency risks, and dependencies between issues.
+
+Inputs:
+- repository: [NAME OR URL]
+- issues source: [PRIMARY INPUT]
+- applied filter: [SPECIFIC OBJECTIVE]
+- pending backlog criteria: [open / open without PR / blocked / ready / triage pending / other]
+- target component or area: [INVOLVED COMPONENTS]
+- target assignee or owner: [ASSIGNEE]
+- target branch: [TARGET BRANCH]
+- target environment: [DEV / QA / STAGING / PROD]
+- documents to review: [README, docs/, architecture, workflows, related issues]
+
+Activities:
+1. Validate the context:
+   - review project documentation, processes, policies, standards, and guidelines;
+   - review recent changes, active branches, and possible conflicts with other agents;
+   - detect whether there are PRs or branches related to any analyzed issue.
+
+2. Normalize the input:
+   - convert each issue into a homogeneous record with:
+     - number,
+     - title,
+     - status,
+     - labels,
+     - milestone,
+     - assignee,
+     - inferred component or module,
+     - work type,
+     - inferred severity or criticality,
+     - dependency with other issues,
+     - evidence of blocking or waiting,
+     - relation with PR or branch if it exists.
+
+3. Classify each issue by category:
+   - bug,
+   - incident,
+   - requirement,
+   - improvement,
+   - technical debt,
+   - testing / QA,
+   - documentation,
+   - security / DevSecOps,
+   - infrastructure / CI/CD / operations,
+   - pending analysis,
+   - missing functional definition.
+
+4. Classify each issue by attention state:
+   - ready for analysis,
+   - requires functional clarification,
+   - requires technical analysis,
+   - blocked by dependency,
+   - blocked by environment,
+   - blocked by another branch / PR,
+   - ready to implement,
+   - ready to validate,
+   - candidate for closure,
+   - duplicate / consolidable.
+
+5. Evaluate actual priority considering:
+   - business or user impact,
+   - technical criticality,
+   - regression risk,
+   - operational risk,
+   - security risk,
+   - dependency with other issues,
+   - estimated effort,
+   - urgency of the target environment,
+   - existence of workaround.
+
+6. Identify groupings and consolidation opportunities:
+   - issues in the same component,
+   - issues in the same functional flow,
+   - issues with the same root cause,
+   - issues that should be addressed together in a single plan,
+   - issues that must stay separate to preserve atomic commits and low risk.
+
+7. Propose attention order:
+   - safe quick wins first,
+   - then functional or technical blockers,
+   - then structural dependencies,
+   - finally lower urgency improvements.
+
+8. For each prioritized issue or issue group, propose:
+   - attention objective,
+   - scope,
+   - affected component,
+   - preconditions,
+   - tasks,
+   - suggested owner by role,
+   - deliverables,
+   - validations,
+   - risks,
+   - recommended branch / integration strategy.
+
+9. If information is missing, document exactly what is missing:
+   - insufficient description,
+   - missing acceptance criteria,
+   - ambiguous component,
+   - unsupported priority,
+   - unexplained dependency,
+   - issue that should be split or consolidated.
+
+10. If the source is `gh issue list`, assume the output may come raw or summarized. If the information is not enough to classify precisely, state it as an assumption and lower the confidence level.
+
+Constraints:
+- do not propose closing, merging, or relabeling any issue without explicitly stating the evidence and reasoning behind that recommendation — the final decision belongs to a human,
+- do not assign high or critical priority without concrete evidence (usage data, reported incidents, business impact stated by the requester); if that evidence does not exist, say so explicitly and lower the confidence level instead of inventing it,
+- if you detect issues that look like duplicates or overlapping, do not silently merge or discard them: flag them explicitly as "possible duplicate of #N" in the matrix and findings, and leave the consolidation decision to a human,
+- do not invent dependencies between issues that are not documented or reasonably inferable from the content actually reviewed.
+
+Mandatory output format:
+1. Executive summary
+2. Confirmed facts
+3. Findings
+4. Assumptions
+5. Risks
+6. Normalized issues matrix
+7. Categorization by component / owner / priority / attention state
+8. Dependencies and potential conflicts
+9. Attention or remediation plan
+10. Final recommendations
+
+Expected structure inside the output:
+
+### Normalized issues matrix
+| Issue | Title | GH Status | Component | Assignee | Type | Priority | Attention state | Dependencies | Observations |
+|---|---|---|---|---|---|---|---|---|---|
+
+### Categorization by component
+| Component | Issues | Dominant severity | Aggregated risk | Recommendation |
+|---|---|---|---|---|
+
+### Categorization by owner
+| Current owner | Assigned issues | General state | Load risk | Suggested action |
+|---|---|---|---|---|
+
+### Attention or remediation plan
+| Order | Issue or group | Priority | Objective | Key tasks | Suggested owner | Deliverables | Dependencies | Risks | Validation |
+|---|---|---|---|---|---|---|---|---|---|
+
+### Suggested executable backlog
+| Phase | Scope | Included issues | Expected outcome |
+|---|---|---|---|
+| 1 | Quick wins / low risk | | |
+| 2 | Functional or technical blockers | | |
+| 3 | Structural remediation | | |
+| 4 | Improvements and hardening | | |
+
+Decision rules:
+- Do not mix unrelated issues in the same execution block.
+- Do not propose issue closure without evidence.
+- Do not propose implementation when functional or technical analysis is still missing.
+- When several issues are similar, indicate whether it is better to:
+  - consolidate them under an epic or master issue,
+  - keep them separated,
+  - relate them by dependency.
+- Always distinguish between confirmed facts and inferred classification.
+```
+
+---
+
+## Use with standard formula
+
+```text
+Use the GitHub Issues backlog triage and planning prompt and adapt it to:
+- repository: [NAME OR URL]
+- issues source: [PRIMARY INPUT]
+- applied filter: [SPECIFIC OBJECTIVE]
+- pending criteria: [open / blocked / without associated PR / triage pending]
+- target component: [INVOLVED COMPONENTS]
+- target owner: [ASSIGNEE]
+- target branch: [TARGET BRANCH]
+- environment: [DEV / QA / STAGING / PROD]
+- documents to review: README, docs/, architecture, workflows, related PRs and issues
+- specific output objective: categorized backlog and attention plan with priorities, tasks, owners and deliverables
+- depth level: high
+```
+
+```text
+Example with gh issue list:
+gh issue list \
+  --repo [ORG/REPO] \
+  --state open \
+  --limit 200 \
+  --json number,title,body,labels,assignees,milestone,state,createdAt,updatedAt,url
+```
+
+```text
+Example invocation to the agent:
+Use the GitHub Issues backlog triage and planning prompt and adapt it to:
+- repository: [ORG/REPO]
+- issues source: [PASTE gh issue list JSON]
+- applied filter: assignee + component
+- pending criteria: open without associated PR
+- target component: [COMPONENT]
+- target owner: [USER]
+- target branch: main
+- environment: QA
+- documents to review: README, docs/, workflows, architecture, related issues
+- specific output objective: prioritized matrix and phased attention plan
+- depth level: high
+```
+
+---
+
+## Expected output
+
+| Section | Expected content |
+|---|---|
+| Executive summary | Backlog overview and attention recommendation |
+| Confirmed facts | Explicit data obtained from issues, branches, PRs and documentation |
+| Findings | Detected patterns, groupings, gaps, overload or disorder |
+| Assumptions | Inferences made because of incomplete data |
+| Risks | Functional, technical, operational, security and concurrency risks |
+| Issues matrix | Normalized and classified inventory |
+| Categorization | View by component, owner, priority and attention state |
+| Dependencies | Blocking, sequencing and recommended consolidations |
+| Attention plan | Order, priorities, tasks, owners and deliverables |
+| Final recommendations | Suggested decisions for execution and backlog governance |
+
+### Example — normalized issues matrix (excerpt)
+
+| Issue | Title | GH Status | Component | Assignee | Type | Priority | Attention state | Dependencies | Observations |
+|---|---|---|---|---|---|---|---|---|---|
+| #142 | Add example rows to "Expected output" tables across the prompt library | open | `ai_sdlc_pro_prompts/*.md` | dleon | improvement | high (evidence: blocks the quality review of batch 33) | ready to implement | none | Affects the same 10 ES/EN files already identified in this triage |
+| #138 | "Mandatory previous context" section out of sync between ES and EN in 07-00 | open | `ai_sdlc_pro_prompts/07-00-*.en.md` | unassigned | documentation | medium (no impact data; priority not supported) | requires functional clarification | possible duplicate of #131 | Check with the reporter whether #131 already covers this before working both in parallel |
+
+---
+
+*Source: AI-SDLC Pro (https://prompts.lionsystems.com.mx), CC BY 4.0 license. Adapted to the SKILL.md format: this note was added; the prompt text is unchanged. Version with projects, persistent variables and per-prompt results: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*

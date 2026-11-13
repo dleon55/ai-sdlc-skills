@@ -1,0 +1,100 @@
+# 15.2 — Diseño de casos de prueba manuales y funcionales
+
+## Descripción
+
+Prompt para testers y QAs funcionales. Permite diseñar casos de prueba manuales detallados (paso a paso, datos de prueba, resultados esperados) a partir de historias de usuario o especificaciones funcionales sin requerir conocimientos de programación.
+
+**Cuándo usarlo:** al planificar la fase de pruebas de una funcionalidad, antes de iniciar pruebas exploratorias o manuales.
+
+---
+
+## Contrato editorial
+
+| Campo | Valor |
+|---|---|
+| Tipo | documentación |
+| Riesgo esperado | bajo — genera una matriz de casos de prueba como documentación, no ejecuta pruebas ni modifica código; un caso de borde omitido puede dejar un escenario sin cobertura de QA |
+| Entradas requeridas | historia de usuario o requerimiento a validar, criterios de aceptación o reglas de negocio si existen (idealmente de `15-01`) |
+| Herramientas permitidas | ninguna ejecución ni acceso a sistemas — solo redacción de la matriz de casos de prueba a partir de la información provista |
+| Autonomía permitida | A1 — Proponer la suite de casos de prueba manuales como artefacto listo para ejecución por QA |
+| Criterios de detención | no inventar reglas de negocio o comportamientos del sistema no descritos en el requerimiento; si faltan criterios de aceptación, señalarlo y limitar la cobertura a lo verificable con la información disponible |
+| Salida esperada | ver `## Salida esperada` |
+| Evidencia mínima | cada caso de prueba incluye ID, precondición, pasos de ejecución, datos de prueba y resultado esperado verificable; la suite cubre camino feliz, alterno, negativo y al menos un caso de borde |
+| Siguiente prompt recomendado | `07-05-automatizacion-antigravity` para automatizar los casos críticos de la suite; `07-03-pruebas-e2e` si se requiere diseño de pruebas end-to-end formales |
+
+---
+
+## Contexto obligatorio previo
+
+> Incluye el bloque del archivo `00-framework.md` antes de este prompt.
+
+---
+
+## Prompt completo
+
+```text
+Objetivo:
+Actúa como un QA Tester Funcional. Genera una suite de casos de prueba manuales detallados para validar funcionalmente el requerimiento o la historia de usuario adjunta.
+
+Entradas:
+- historia de usuario o requerimiento: [PEGAR]
+- criterios de aceptación o reglas de negocio: [PEGAR SI APLICA]
+
+Actividades:
+1. Analiza los flujos de usuario descritos en la funcionalidad.
+2. Identifica los escenarios principales de prueba:
+   - camino feliz (happy path),
+   - escenarios alternos,
+   - caminos de validación o error (negativos),
+   - casos de borde (valores límite, campos vacíos, etc.).
+3. Describe detalladamente cada caso de prueba en una estructura tabular.
+4. Por cada caso de prueba especifica:
+   - ID del caso de prueba,
+   - título corto descriptivo,
+   - precondición (estado previo del sistema),
+   - pasos de ejecución (acciones secuenciales),
+   - datos de prueba sugeridos (entradas específicas),
+   - resultado esperado (comportamiento correcto observable).
+
+Restricciones:
+- distingue explícitamente los casos "debe probarse" (camino crítico, reglas de negocio, seguridad) de los "conviene probar" (variaciones cosméticas o de baja probabilidad), y prioriza los primeros si el tiempo de QA es limitado,
+- no diseñes casos de prueba que dependan de datos reales de producción (cuentas de clientes, información financiera real, PII) — usa siempre datos sintéticos o de un ambiente de prueba controlado,
+- cada caso de prueba debe poder trazarse al requerimiento o criterio de aceptación específico que valida; no incluyas casos sin esa referencia,
+- no inventes reglas de negocio o comportamientos del sistema que no estén descritos en el requerimiento o los criterios de aceptación provistos; si faltan, decláralo y limita la cobertura a lo verificable con la información disponible.
+
+Salida:
+Presenta una tabla estructurada con los siguientes campos por cada caso de prueba:
+| ID | Título | Precondición | Pasos de Ejecución | Datos de Entrada | Resultado Esperado |
+```
+
+---
+
+## Uso con fórmula estándar
+
+```text
+Usa el prompt de casos de prueba manuales y adáptalo a:
+- repositorio: [NOMBRE O URL]
+- issue o requerimiento: [REFERENCIA FUNCIONAL]
+- rama: main
+- ambiente: QA
+- componentes: módulo de checkout
+- documentos a revisar: historias de usuario, reglas de negocio
+- objetivo puntual de salida: matriz completa de casos de prueba manuales paso a paso
+- nivel de profundidad: alto
+```
+
+---
+
+## Salida esperada
+
+Una tabla clara con casos de prueba numerados cubriendo flujos exitosos y de error:
+
+| ID | Título | Precondición | Pasos de Ejecución | Datos de Entrada | Resultado Esperado |
+|---|---|---|---|---|---|
+| TC-01 | Login Exitoso | Usuario registrado existe | 1. Ir a login<br>2. Ingresar credenciales<br>3. Click en entrar | User: admin<br>Pass: admin123 | Redirección a Home y banner de bienvenida visible |
+| TC-02 | Login con contraseña inválida | Usuario registrado existe | 1. Ir a login<br>2. Ingresar contraseña incorrecta<br>3. Click en entrar | User: admin<br>Pass: wrongpass | Mensaje de error "Contraseña incorrecta" y permanece en login |
+| TC-03 | Validación de campo de correo obligatorio en registro | Formulario de registro cargado y vacío | 1. Ir a formulario de registro<br>2. Dejar el campo "Correo" vacío<br>3. Completar el resto de campos válidos<br>4. Click en "Registrarse" | Correo: (vacío)<br>Resto de campos: válidos | El sistema no envía el formulario, muestra "El correo es obligatorio" junto al campo y lo resalta en rojo — valida el criterio de aceptación de campos obligatorios de la historia de registro |
+
+---
+
+*Fuente: AI-SDLC Pro (https://prompts.lionsystems.com.mx), licencia CC BY 4.0. Adaptado al formato SKILL.md: se añadió esta nota; el texto del prompt no cambió. Versión con proyectos, variables persistentes y resultados por prompt: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*

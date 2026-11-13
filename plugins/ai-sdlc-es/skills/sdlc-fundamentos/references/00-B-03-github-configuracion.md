@@ -1,0 +1,166 @@
+# 0-B.3 — Configuración de repositorio GitHub (protecciones, plantillas y settings)
+
+## Descripción
+
+Prompt para configurar el repositorio GitHub de forma completa y segura: protección de ramas, plantillas de issues y PRs, Dependabot, GitHub Actions permissions, Environments, secrets y quality gates. Alinea la plataforma con la metodología y el nivel de madurez del equipo.
+
+**Cuándo usarlo:** al crear un repositorio nuevo, al estandarizar uno existente, o cuando el repo no tiene protecciones formales y se va a incorporar IA o múltiples contribuidores.
+
+---
+
+## Contrato editorial
+
+| Campo | Valor |
+|---|---|
+| Tipo | operación |
+| Riesgo esperado | medio — branch protection, permisos de Actions y Environments mal configurados pueden bloquear al equipo o dejar `main` sin protección real; el prompt entrega comandos y plantillas, no los ejecuta |
+| Entradas requeridas | organización/usuario y nombre del repositorio, metodología de branching, ramas a proteger, composición del equipo, ambientes de despliegue, stack de CI |
+| Herramientas permitidas | lectura de la configuración actual del repositorio (workflows, protecciones existentes) — el prompt entrega comandos `gh` CLI y archivos de plantilla en texto; no ejecuta comandos ni modifica configuración de GitHub directamente |
+| Autonomía permitida | A1 — Proponer |
+| Criterios de detención | si no se conoce con certeza el estado actual de branch protection, los roles del equipo o los ambientes reales, declarar el supuesto explícitamente en vez de generar reglas que podrían bloquear al equipo real al aplicarse |
+| Salida esperada | ver `## Salida esperada` |
+| Evidencia mínima | los comandos `gh` CLI cubren cada rama declarada como protegida; las plantillas de issues, PR, `dependabot.yml` y `CODEOWNERS` están completas y sin placeholders sin resolver |
+| Siguiente prompt recomendado | `00-B-05-stack-calidad-codigo` para registrar el workflow de quality gates como required check dentro de las branch protection rules aquí definidas |
+
+---
+
+## Contexto obligatorio previo
+
+> Incluye el bloque del archivo `00-framework.md` antes de este prompt.
+
+---
+
+## Prompt completo
+
+```text
+Objetivo:
+Genera la configuración completa del repositorio GitHub, sus protecciones y plantillas de trabajo.
+
+Inputs requeridos:
+- organización o usuario GitHub: [ORG/USER]
+- nombre del repositorio: [REPO]
+- metodología de branching: [GitFlow / GitHub Flow / Trunk-Based / otro]
+- ramas protegidas: [ej: main, develop, release/*]
+- equipo: [roles y tamaños, ej: 3 devs + 2 QA + AI agents]
+- ambientes de despliegue: [dev / staging / prod]
+- stack CI: [GitHub Actions / CircleCI / otro]
+
+Entrega:
+
+1. PROTECCIÓN DE RAMAS (Branch Protection Rules)
+   Por cada rama protegida indica:
+   - requires pull request before merging: sí/no, número de reviewers
+   - require status checks: qué checks deben pasar (lint, tests, build)
+   - require branches to be up to date: sí/no
+   - require conversation resolution: sí/no
+   - restrict who can push: lista de roles
+   - allow force push: nunca en main/develop
+   - allow deletions: sí/no
+   - require signed commits: recomendación
+   Entrega el comando gh CLI equivalente para cada regla.
+
+2. GITHUB ACTIONS PERMISSIONS
+   - workflow permissions (read-only tokens por defecto)
+   - environments con required reviewers para staging y prod
+   - restricción de qué workflows pueden usar cada secreto
+   - OIDC vs PAT: recomendación por ambiente
+
+3. DEPENDABOT
+   Genera el archivo .github/dependabot.yml completo con:
+   - ecosistema detectado según el stack
+   - frecuencia de actualizaciones
+   - límite de PRs abiertos
+   - auto-merge para patch updates (solo si hay tests verdes)
+   - ignore list para dependencias que no deben actualizarse
+
+4. PLANTILLAS DE ISSUES (.github/ISSUE_TEMPLATE/)
+   Genera los siguientes archivos con contenido completo:
+   a) bug_report.md:
+      - descripción del bug
+      - pasos para reproducir
+      - comportamiento esperado vs actual
+      - ambiente (OS, versión, stack)
+      - logs o capturas
+      - criterios de aceptación para considerar el bug cerrado
+   b) feature_request.md:
+      - descripción funcional
+      - problema que resuelve
+      - comportamiento esperado
+      - casos de uso
+      - criterios de aceptación
+      - dependencias o impacto en otros módulos
+   c) ai_task.md (para tareas delegadas a agentes IA):
+      - descripción de la tarea
+      - contexto del repositorio relevante
+      - archivos involucrados
+      - restricciones y reglas
+      - criterios de aceptación verificables por el agente
+      - nivel de autonomía permitido
+      - checklist de validación humana post-ejecución
+
+5. PLANTILLA DE PULL REQUEST (.github/PULL_REQUEST_TEMPLATE.md)
+   - descripción del cambio
+   - issue relacionado (#)
+   - tipo de cambio (feat / fix / docs / refactor / test / chore)
+   - checklist: tests, docs, impacto en otros módulos, sin secretos, revisión de seguridad
+   - instrucciones para el reviewer
+   - notas para despliegue
+
+6. CODEOWNERS (.github/CODEOWNERS o raíz)
+   - mapa de responsables por directorio/tipo de archivo
+   - regla especial: revisión humana obligatoria para cambios en /.github/, /workflows/, /migrations/
+
+Restricciones:
+- nunca propongas deshabilitar un check requerido, una regla de branch protection o un environment con reviewers obligatorios ya existente sin señalarlo explícitamente como un cambio que requiere aprobación humana — no lo incluyas como parte de una "limpieza" silenciosa,
+- los permisos de GitHub Actions, tokens y secretos deben seguir el principio de mínimo privilegio: no otorgues alcance de escritura, acceso a secretos ni permisos a nivel de organización más amplios de lo que el workflow realmente necesita,
+- si no conoces con certeza el estado actual de branch protection, los roles reales del equipo o los ambientes de despliegue configurados, decláralo como supuesto explícito en la entrega en vez de generar reglas que podrían bloquear al equipo real al aplicarse,
+- toda regla que restrinja quién puede hacer push o merge debe quedar acompañada del rol o equipo responsable de aprobarla — no dejes la restricción sin dueño,
+- no generes secretos, tokens ni credenciales de ejemplo con apariencia de reales; usa placeholders explícitos como `[SECRET_NAME]`.
+
+Formato de salida:
+- contenido completo de cada archivo listo para copiar
+- comandos gh CLI para configurar las protecciones de ramas
+- tabla de resumen: área | configuración | prioridad | riesgo si se omite
+```
+
+---
+
+## Uso con fórmula estándar
+
+```text
+Usa el prompt de configuración de repositorio GitHub y adáptalo a:
+- repositorio: [ORG/REPO]
+- metodología: [BRANCHING STRATEGY]
+- stack CI: [GITHUB ACTIONS / OTRO]
+- ambientes: [DEV / STAGING / PROD]
+- equipo: [COMPOSICIÓN]
+- documentos a revisar: workflows existentes, README, CONTRIBUTING
+- objetivo puntual de salida: archivos ISSUE_TEMPLATE/, PR_TEMPLATE, dependabot.yml, CODEOWNERS + comandos gh CLI para branch protection
+- nivel de profundidad: alto
+```
+
+---
+
+## Salida esperada
+
+| Área | Archivo/Configuración | Prioridad | Riesgo si se omite |
+|---|---|---|---|
+| Branch protection | `gh api` rules para main | Obligatorio | Commits directos, fuerza mayor sobre historial |
+| Plantilla PR | `.github/PULL_REQUEST_TEMPLATE.md` | Obligatorio | PRs sin contexto, revisiones incompletas |
+| Template bug | `.github/ISSUE_TEMPLATE/bug_report.md` | Obligatorio | Issues sin datos suficientes para reproducción |
+| Template feature | `.github/ISSUE_TEMPLATE/feature_request.md` | Obligatorio | Requerimientos ambiguos sin criterios de aceptación |
+| Template AI task | `.github/ISSUE_TEMPLATE/ai_task.md` | Obligatorio si se usan agentes | Agentes operando sin límites ni criterios claros |
+| CODEOWNERS | `.github/CODEOWNERS` | Recomendado | PRs aprobados sin revisión del dueño del área |
+| Dependabot | `.github/dependabot.yml` | Recomendado | Dependencias vulnerables no detectadas automáticamente |
+| Environments | GitHub Settings → Environments | Recomendado | Despliegues a prod sin aprobación humana |
+
+### Ejemplo aplicado: configuración de `ai-sdlc-prompts` en GitHub
+
+| Área | Comando/Config propuesto | Aprobación requerida |
+|---|---|---|
+| Branch protection `main` | `gh api repos/:owner/ai-sdlc-prompts/branches/main/protection -X PUT -F required_status_checks[contexts][]=pytest -F enforce_admins=true` | Admin del repo confirma antes de aplicar — bloquea merges directos a `main` |
+| CODEOWNERS | `ai_sdlc_pro_prompts/*.en.md @equipo-traduccion` para exigir revisión de paridad ES/EN en cada PR que toque prompts | Ninguna — es aditivo, no reduce protecciones existentes |
+
+---
+
+*Fuente: AI-SDLC Pro (https://prompts.lionsystems.com.mx), licencia CC BY 4.0. Adaptado al formato SKILL.md: se añadió esta nota; el texto del prompt no cambió. Versión con proyectos, variables persistentes y resultados por prompt: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*
