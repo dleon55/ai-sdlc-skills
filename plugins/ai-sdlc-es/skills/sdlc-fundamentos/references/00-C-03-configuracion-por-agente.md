@@ -1,0 +1,218 @@
+# 0-C.3 — Configuración específica por tipo de agente IA
+
+## Descripción
+
+Prompt y referencia para configurar el comportamiento, las instrucciones y las restricciones de cada tipo de agente IA según sus capacidades y mecanismos propios: GitHub Copilot (Agent / Chat / Edits), Claude vía chat/API, Claude Code, OpenAI Codex, Windsurf, Cursor y Google Antigravity. Garantiza que cada agente opere con el contexto del proyecto y dentro de las reglas de equipo.
+
+**Cuándo usarlo:** al incorporar un nuevo tipo de agente al proyecto, al detectar que un agente no sigue las convenciones, o al configurar un entorno multi-agente por primera vez. Requiere que la gobernanza base ya exista (ver `00-B-02-gobernanza-ia-agentes`); este prompt configura mecanismos específicos por agente, no la base.
+
+---
+
+## Contrato editorial
+
+| Campo | Valor |
+|---|---|
+| Tipo | documentación |
+| Riesgo esperado | medio — si una regla común obligatoria (no exponer secretos, no migraciones sin aprobación, no push a ramas protegidas) queda ausente en el mecanismo propio de un agente, ese agente puede operar con más autonomía de la prevista; el prompt solo redacta contenido, no lo aplica |
+| Entradas requeridas | lista de agentes activos (Copilot, Claude vía chat/API, Claude Code, Codex, Windsurf, Cursor, Antigravity), stack del proyecto, metodología, reglas críticas del proyecto, nivel de autonomía general; gobernanza base ya existente (`00-B-02`) |
+| Herramientas permitidas | lectura de la gobernanza y configuración ya existentes en el repositorio para no duplicarlas — sin escritura ni ejecución; el humano decide crear los archivos entregados (`.github/copilot-instructions.md`, `.windsurfrules`, `.cursorrules`, `AGENTS.md`, `CLAUDE.md`, `docs/ai-agents/*.md`) |
+| Autonomía permitida | A1 — Proponer |
+| Criterios de detención | si se solicita configurar un agente sin que exista la gobernanza base (`00-B-02`), o si el nivel de autonomía solicitado para un agente entra en conflicto con las reglas comunes obligatorias, señalar el conflicto antes de generar la configuración específica |
+| Salida esperada | no existe una sección `## Salida esperada` independiente en este prompt — el formato de salida son los bloques de configuración por agente y la "TABLA COMPARATIVA DE MECANISMOS" dentro del bloque de prompt |
+| Evidencia mínima | cada agente declarado como activo tiene su bloque de configuración completo con archivo, mecanismo y contenido; las reglas comunes obligatorias aparecen en todos los mecanismos generados |
+| Siguiente prompt recomendado | `00-C-02-plan-mode-multiagente` para operar en modo plan y coordinación multi-agente con la configuración por agente ya activa |
+
+---
+
+## Contexto obligatorio previo
+
+> Incluye el bloque del archivo `00-framework.md` antes de este prompt.
+
+---
+
+## Prompt completo
+
+```text
+Objetivo:
+Genera las instrucciones de configuración para cada agente IA activo en este proyecto, según sus mecanismos propios de control y los estándares del repositorio.
+
+Inputs requeridos:
+- agentes activos: [lista: Copilot / Claude (chat/API) / Claude Code / Codex / Windsurf / Cursor / Antigravity]
+- stack del proyecto: [STACK]
+- metodología: [METODOLOGÍA]
+- reglas críticas del proyecto: [REGLAS QUE TODOS DEBEN CUMPLIR]
+- nivel de autonomía general: [NIVEL DE AUTONOMÍA]
+
+Para cada agente activo, entrega:
+
+─────────────────────────────────────
+GITHUB COPILOT (Agent / Chat / Edits)
+─────────────────────────────────────
+Archivo: .github/copilot-instructions.md
+Contenido:
+- rol del agente: Ingeniero de Software Senior trabajando en [PROYECTO]
+- stack: [versiones exactas de lenguaje, framework, DB, infra]
+- convenciones de código: nombrado, estructura, patrones obligatorios y prohibidos
+- reglas de commit: formato Conventional Commits, commits atómicos
+- qué archivos NO modificar sin aprobación: workflows/, migrations/, .env, CODEOWNERS
+- cómo actuar ante ambigüedad: pausar y preguntar al usuario humano
+- reglas QA: no proponer código sin pruebas para lógica de negocio nueva
+- modo plan: cuando el usuario diga "modo plan" o "solo analiza", no hacer cambios
+
+Archivos adicionales de Copilot:
+- .github/prompts/ → prompts reutilizables para tareas frecuentes del proyecto
+- .github/instructions/ → instrucciones por tipo de archivo (applyTo patterns):
+  - *.py → convenciones Python del proyecto
+  - *.yml → reglas para modificar workflows
+  - *.sql / migrations/ → "nunca modificar sin aprobación explícita"
+
+─────────────────────────────────────
+CLAUDE — CHAT / API (Anthropic, sin herramientas de proyecto)
+─────────────────────────────────────
+Mecanismo: system prompt (primer mensaje del contexto)
+Contenido del system prompt base:
+- rol, proyecto y stack
+- reglas de comportamiento (mismas del 00-framework.md)
+- instrucción de modo plan por defecto si no se indica lo contrario
+- instrucción de reportar siempre en formato estructurado: hechos / hallazgos / supuestos / riesgos / recomendaciones
+- instrucción de prefijo de rama: claude/[issue]/[descripcion]
+- instrucción de "no ejecutar hasta confirmación humana explícita"
+
+Archivo a crear: docs/ai-agents/claude-system-prompt.md
+(plantilla del system prompt para pegar manualmente en claude.ai o en cada llamada a la API — este mecanismo no lee archivos del repo por su cuenta)
+
+─────────────────────────────────────
+CLAUDE CODE (CLI/IDE — lee el repositorio directamente)
+─────────────────────────────────────
+Mecanismo: archivo CLAUDE.md en la raíz del repositorio (y uno opcional por subcarpeta para contexto específico de esa ruta), leído automáticamente al iniciar cada sesión — no requiere pegar nada manualmente como el mecanismo de chat/API de arriba.
+Contenido de CLAUDE.md:
+- rol del agente y propósito del repositorio
+- stack: [versiones exactas de lenguaje, framework, DB, infra]
+- comandos de build, test y lint del proyecto (para que el agente los use en vez de adivinarlos)
+- convenciones de código y estructura del repo
+- qué archivos/carpetas NO modificar sin aprobación: workflows/, migrations/, .env, CODEOWNERS
+- reglas de commit: formato Conventional Commits, commits atómicos
+- instrucción de prefijo de rama: claude/[issue]/[descripcion] (mismo prefijo que el mecanismo de chat/API, ya que ambos son Claude)
+- cómo actuar ante ambigüedad: pausar y preguntar al usuario humano
+- referencia a skills/[capacidad]/SKILL.md para procedimientos especializados que no deban vivir en el CLAUDE.md principal
+
+Archivo a crear: CLAUDE.md (raíz del repositorio) — no en docs/ai-agents/, porque Claude Code solo lo lee automáticamente si está en la raíz (o en la carpeta correspondiente, para contexto por subcarpeta)
+
+─────────────────────────────────────
+OPENAI CODEX (CLI / API — agente de código de OpenAI)
+─────────────────────────────────────
+Mecanismo: instrucciones en el prompt + AGENTS.md en el repo
+Configuración:
+- AGENTS.md en raíz: define rol de Codex, accesos permitidos y prohibidos
+- Instrucciones de rama: codex/[issue]/[descripcion]
+- Restricciones de herramientas: qué comandos puede ejecutar (tests, lint, build) y cuáles no (deploy, migrate, push a main)
+- Instrucción de sandbox: ejecutar tests en entorno aislado, no modificar datos de staging/prod
+- Modo de aprobación: proponer cambios como diff para revisión humana antes de aplicar
+
+Archivo a crear: docs/ai-agents/codex-config.md
+
+─────────────────────────────────────
+WINDSURF (Codeium)
+─────────────────────────────────────
+Mecanismo: .windsurfrules en raíz del repositorio
+Secciones del archivo:
+- [context]: descripción del proyecto, stack, arquitectura
+- [rules]: convenciones de código, patrones prohibidos
+- [security]: OWASP aplicables, secretos, validación de input
+- [workflow]: siempre revisar antes de modificar, commits atómicos, rama con prefijo windsurf/
+- [restricted_files]: lista de archivos que requieren confirmación explícita
+- [escalation]: condiciones donde Windsurf debe pausar y mostrar advertencia al usuario
+
+─────────────────────────────────────
+CURSOR
+─────────────────────────────────────
+Mecanismo: .cursorrules en raíz del repositorio (o .cursor/rules/)
+Estructura del archivo:
+- descripción del proyecto y stack en lenguaje natural
+- reglas de código: qué patrones usar, cuáles evitar
+- instrucciones de seguridad: sin secretos hardcodeados, sin eval(), sin SQL concatenado
+- reglas de testing: todo cambio de lógica de negocio requiere test
+- rama con prefijo cursor/[issue]/[descripcion]
+- instrucción de modo plan disponible: cuando se indique "plan only"
+
+─────────────────────────────────────
+GOOGLE ANTIGRAVITY (uso acotado a pruebas E2E en navegador)
+─────────────────────────────────────
+Mecanismo: instrucciones en el prompt de tarea + archivo de configuración
+Alcance específico: Antigravity es una plataforma agent-first (editor, terminal y
+navegador) capaz de generar, ejecutar y probar código de forma autónoma — no está
+limitada a pruebas de navegador. En este proyecto se acota deliberadamente su uso a
+pruebas E2E en navegador; no se le asignan tareas de modificación de código fuente.
+Configuración:
+- URL base por ambiente: [DEV_URL / QA_URL / STAGING_URL]
+- credenciales de prueba: usar variables de entorno, nunca hardcodear
+- flujos autorizados: lista de flows que puede automatizar
+- datos de prueba: usar solo datasets marcados como "test data", nunca datos reales
+- captura de evidencias: screenshots y video obligatorios para cada escenario ejecutado
+- reporte: formato estándar del proyecto (tabla: escenario | resultado | evidencia)
+- restricción: no ejecutar en producción
+
+Archivo a crear: docs/ai-agents/antigravity-config.md
+
+─────────────────────────────────────
+TABLA COMPARATIVA DE MECANISMOS
+─────────────────────────────────────
+
+| Agente | Mecanismo de instrucción | Archivo del repo | Scope |
+|---|---|---|---|
+| GitHub Copilot | .github/copilot-instructions.md | Sí, en repo | Código + análisis |
+| Claude (chat/API) | System prompt pegado manualmente | docs/ai-agents/claude-system-prompt.md | Análisis + código |
+| Claude Code | CLAUDE.md, leído automáticamente | Sí, en repo | Análisis + código |
+| OpenAI Codex | AGENTS.md + prompt | AGENTS.md | Código + shell |
+| Windsurf | .windsurfrules | Sí, en repo | Código |
+| Cursor | .cursorrules | Sí, en repo | Código |
+| Antigravity | Prompt de tarea | docs/ai-agents/antigravity-config.md | Código + navegador (acotado a E2E en este proyecto) |
+
+Reglas que deben estar presentes en TODOS los agentes:
+- antes de proponer cambios de sintaxis o refactorizaciones, verificar la versión del runtime local (Node.js, Python, JDK) para prevenir incompatibilidades
+- nunca hacer push a ramas protegidas directamente
+- nunca exponer secretos, tokens ni credenciales
+- nunca ejecutar migraciones sin aprobación humana
+- nunca modificar workflows de CI/CD sin revisión
+- ante ambigüedad o riesgo, pausar y escalar
+- todos los cambios son trazables: rama nombrada con prefijo de agente + issue ID
+```
+
+---
+
+## Uso con fórmula estándar
+
+```text
+Usa el prompt de configuración por tipo de agente y adáptalo a:
+- repositorio: [NOMBRE O URL]
+- agentes activos: [LISTA]
+- stack: [STACK]
+- metodología: [METODOLOGÍA]
+- reglas críticas: [REGLAS ESPECÍFICAS DEL PROYECTO]
+- nivel de autonomía: [NIVEL DE AUTONOMÍA]
+- documentos a revisar: README, CONTRIBUTING, AGENTS.md existente (si hay), estructura del repo
+- objetivo puntual de salida: archivos de instrucciones completos para cada agente activo + tabla comparativa
+- nivel de profundidad: alto
+```
+
+---
+
+## Estructura de carpeta docs/ai-agents/ recomendada
+
+```
+docs/ai-agents/
+├── README.md                    ← índice de agentes configurados y nivel de acceso
+├── claude-system-prompt.md      ← system prompt base para sesiones de Claude chat/API
+├── codex-config.md              ← configuración y restricciones para Codex
+└── antigravity-config.md        ← config de ambientes y flows autorizados para Antigravity
+```
+
+`CLAUDE.md` queda fuera de esta carpeta a propósito: Claude Code solo lo lee
+automáticamente si está en la raíz del repositorio (o en la carpeta
+correspondiente, para contexto específico de esa ruta) — moverlo a
+`docs/ai-agents/` lo volvería invisible para el mecanismo que se supone debe
+alimentar.
+
+---
+
+*Fuente: AI-SDLC Pro (https://prompts.lionsystems.com.mx), licencia CC BY 4.0. Adaptado al formato SKILL.md: se añadió esta nota; el texto del prompt no cambió. Versión con proyectos, variables persistentes y resultados por prompt: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*

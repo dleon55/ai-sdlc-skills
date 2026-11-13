@@ -1,0 +1,174 @@
+# 13.3 — Secure SDLC Review
+
+## Description
+
+Prompt to verify that required security controls have been applied in each phase of the development cycle: from design to deployment. Acts as a structured Secure SDLC checklist based on OWASP SAMM, NIST SSDF, and Microsoft SDL, adaptable to new projects and incremental changes.
+
+**When to use:** at the close of each sprint, before a production release, as a project security maturity review, or when a new team or agent is onboarded to the project.
+
+---
+
+## Editorial Contract
+
+| Field | Value |
+|---|---|
+| Type | validation |
+| Expected risk | medium — this is a read-only checklist, but an incorrect maturity verdict (marking something as compliant when it isn't) can authorize a release with missing security controls |
+| Required inputs | current cycle phase, available results from `13-01` (SAST), `13-02` (SCA), and `13-04` (Threat Modeling), project architecture and CI/CD workflows |
+| Allowed tools | reading of code, configuration, CI/CD pipelines, and project documentation — no tool execution or changes |
+| Permitted autonomy | A0 — Analyze the status of each control; A1 — Propose the improvement plan and the prioritized maturity roadmap |
+| Stop criteria | mark a control as "⚠️ partial" or "❌ non-compliant" instead of "✅ compliant" if there is no citable verifiable evidence; stop and escalate if a secret in code or a missing critical production control is detected |
+| Expected output | see `## Expected output` |
+| Minimum evidence | each checklist item references the evidence (file, pipeline, policy) that supports the marked status |
+| Recommended next prompt | `08-03-remediacion-maestro` for gaps that require a code change; `05-01-plan-implementacion` for gaps that require design or process work; `13-05-dast-analisis-dinamico-seguridad` if the review finds DAST testing missing against the running environment |
+
+---
+
+## Mandatory previous context
+
+> Include the block from `00-framework.md` before this prompt.
+> Attach available relevant results: `13-01` (SAST), `13-02` (SCA), `13-04` (Threat Modeling).
+
+---
+
+## Complete prompt
+
+```text
+Objective:
+Verify the project's security maturity level by evaluating whether required controls
+have been applied in each phase of the Secure SDLC, and generate an improvement plan
+for identified gaps.
+
+Phases and controls to evaluate:
+
+1. REQUIREMENTS AND DESIGN PHASE
+   □ Was threat modeling performed before implementation?
+   □ Were explicit security requirements defined (not assumed)?
+   □ Were sensitive data identified and classified (PII, financial, confidential)?
+   □ Was the authentication and authorization model designed before coding?
+   □ Were secure design principles considered?
+     - Least privilege
+     - Defense in depth
+     - Fail securely
+     - Separation of concerns
+     - No security by obscurity
+   □ Was the system attack surface documented?
+
+2. IMPLEMENTATION PHASE
+   □ Were secure coding guidelines followed for the project's language/framework?
+   □ Is all input validated and sanitized at the correct layer (not just on the client)?
+   □ Are parameterized queries / ORM used for database access?
+   □ Is output encoding applied to prevent XSS?
+   □ Are errors handled without exposing internal information to the client?
+   □ Are HTTP security headers applied? (CSP, HSTS, X-Content-Type-Options, etc.)
+   □ Are secrets managed via environment variables or vault, never in code?
+   □ Are passwords stored with adaptive hashing (bcrypt, Argon2, scrypt)?
+   □ Is HTTPS enforced on all endpoints, including internal ones?
+   □ Is file size and type limited on upload endpoints?
+
+3. SECURITY TESTING PHASE
+   □ Was SAST executed as part of the CI pipeline? (see 13-01)
+   □ Was SCA / dependency analysis performed? (see 13-02)
+   □ Was dynamic security testing (DAST) performed on the QA environment?
+   □ Were authentication and authorization tests performed (roles, permissions, JWT)?
+   □ Were basic injection tests performed (SQL, Command, SSTI)?
+   □ Were the most critical endpoints manually reviewed?
+   □ Does the CI QA gate fail if there are high or critical severity security findings?
+
+4. CODE REVIEW PHASE
+   □ Is there a code review checklist with security items?
+   □ Does at least one reviewer have application security knowledge?
+   □ Were changes to authentication, authorization, and data handling reviewed?
+   □ Were security assumptions in the code identified and documented?
+   □ Were logs reviewed to confirm they do not include sensitive data?
+
+5. CI/CD AND DEPLOYMENT PHASE
+   □ Does the CI pipeline include security linting, SAST, and automated SCA?
+   □ Are Docker images based on official and minimal versions (distroless, alpine)?
+   □ Do containers run as a non-root user?
+   □ Are production secrets managed with a dedicated system? (Vault, AWS Secrets Manager, etc.)
+   □ Is least privilege applied to service permissions?
+   □ Is there a tested rollback process for security-problematic deployments?
+   □ Are build artifacts signed or verified with checksums?
+
+6. OPERATIONS AND MONITORING PHASE
+   □ Are security events recorded in structured logs?
+     (failed logins, permission changes, sensitive data access)
+   □ Are alerts configured for anomalous patterns?
+   □ Is there a security incident response process? (see 11-04)
+   □ Is periodic review of access and permissions performed?
+   □ Are security patches applied in a reasonable timeframe?
+     (critical: ≤24h, high: ≤7 days, medium: ≤30 days)
+   □ Are periodic penetration tests or security reviews performed? (see 13-06)
+
+7. MATURITY BY DOMAIN (simplified OWASP SAMM)
+   Evaluate the current level for each domain on a 0-3 scale:
+   - Governance (policies, training, compliance)
+   - Design (threat modeling, security requirements)
+   - Implementation (secure coding, defect management)
+   - Verification (security testing, code review)
+   - Operations (incident management, environment management)
+
+Constraints:
+- mark a control as "⚠️ partial" or "❌ non-compliant" instead of "✅ compliant" if you don't find citable, verifiable evidence (a concrete file, pipeline, or policy) — don't give the project the benefit of the doubt,
+- stop the review and escalate immediately if you detect a secret exposed in code or a missing critical control in production; don't leave it as just another checklist item,
+- this is a read-only review: don't modify pipelines, policies, or configuration as part of this assessment, only document the status and propose the improvement plan,
+- don't mark a gap as resolved without cited evidence that the control is actually implemented and verified,
+- if a finding reveals a governance or process gap (not a code gap), document it for the security owner or tech lead instead of assuming it will be resolved by a code change alone.
+
+Deliverables:
+- complete checklist with status for each control (✅ compliant / ⚠️ partial / ❌ non-compliant / N/A),
+- maturity level per phase (0-3),
+- summary of critical gaps,
+- prioritized improvement plan with owner and suggested timeline,
+- maturity roadmap: what to achieve in the next sprint / quarter / semester.
+```
+
+---
+
+## Standard formula usage
+
+```text
+Use the Secure SDLC review prompt and adapt it to:
+- repository: [NAME OR URL]
+- branch: [MAIN BRANCH]
+- current cycle phase: [DESIGN / IMPLEMENTATION / QA / PRE-RELEASE / OPERATIONS]
+- available results: [SAST 13-01 / SCA 13-02 / Threat Model 13-04 / none]
+- project type: [NEW / INCREMENTAL CHANGE / MAINTENANCE]
+- target environment: [DEV / QA / STAGING / PROD]
+- documents to review: architecture, CI/CD workflows, project security policies
+- specific output goal: complete checklist + improvement plan with maturity levels
+- depth level: high
+```
+
+---
+
+## Expected output
+
+### Checklist by phase
+
+| Phase | Control | Status | Evidence / Note |
+|---|---|---|---|
+| Design | Threat modeling performed | ⚠️ partial | A 2023 STRIDE model exists for the payments module, but it wasn't updated after adding the KYC provider integration |
+| Implementation | Secrets in vault, not in code | ❌ non-compliant | `STRIPE_KEY` hardcoded as a default value in `docker-compose.override.yml:14` |
+| CI/CD | SAST in pipeline | ✅ compliant | `semgrep` runs in `.github/workflows/ci.yml` and blocks the merge on high or critical findings |
+
+### Maturity level by domain (SAMM)
+
+| Domain | Current level | Target level | Gap |
+|---|---|---|---|
+| Governance | 1 / 3 | 2 / 3 | No formal security policy |
+| Design | 0 / 3 | 2 / 3 | No threat modeling performed |
+| Implementation | 2 / 3 | 3 / 3 | Missing formal coding guidelines |
+| Verification | 1 / 3 | 3 / 3 | SAST and DAST not integrated in CI |
+| Operations | 2 / 3 | 3 / 3 | No security alerts in production |
+
+### Improvement plan
+
+| Priority | Gap | Action | Owner | Timeline |
+|---|---|---|---|---|
+| 1 | SAST not in CI | Integrate bandit/semgrep into pipeline | DevOps | Current sprint |
+
+---
+
+*Source: AI-SDLC Pro (https://prompts.lionsystems.com.mx), CC BY 4.0 license. Adapted to the SKILL.md format: this note was added; the prompt text is unchanged. Version with projects, persistent variables and per-prompt results: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*

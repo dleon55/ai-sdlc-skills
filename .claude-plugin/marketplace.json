@@ -1,0 +1,22 @@
+{
+  "name": "ai-sdlc-skills",
+  "description": "AI-SDLC prompts as skills for Claude Code and Codex (ES/EN) — by Lion Systems",
+  "owner": {
+    "name": "Lion Systems",
+    "url": "https://prompts.lionsystems.com.mx"
+  },
+  "plugins": [
+    {
+      "name": "ai-sdlc-es",
+      "source": "./plugins/ai-sdlc-es",
+      "description": "Prompts AI-SDLC en español, una skill por fase",
+      "version": "1.0.0"
+    },
+    {
+      "name": "ai-sdlc-en",
+      "source": "./plugins/ai-sdlc-en",
+      "description": "AI-SDLC prompts in English, one skill per phase",
+      "version": "1.0.0"
+    }
+  ]
+}

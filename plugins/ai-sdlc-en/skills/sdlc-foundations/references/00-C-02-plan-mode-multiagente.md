@@ -1,0 +1,187 @@
+# 0-C.2 — Safe Plan Mode and Multi-Agent Coordination
+
+## Description
+
+Prompt to execute any task in **plan mode** before implementing: the agent analyzes, designs, and proposes without touching the code. Includes the coordination protocol for environments where multiple agents (Copilot, Claude, Codex, Windsurf, Antigravity) operate in parallel on the same repository, preventing conflicts, overwrites, and work loss.
+
+**When to use:** always before executing high-impact tasks, when there is more than one active agent in the repo, or when working in `mode:plan` in Agent Manager or GitHub Copilot Agent.
+
+---
+
+## Editorial Contract
+
+| Field | Value |
+|---|---|
+| Type | analysis |
+| Expected risk | low — plan mode explicitly forbids modifying files, making commits, or running commands that alter the repository or environment; the real risk is indirect (an undetected conflict wastes another agent's parallel work) |
+| Required inputs | reference issue/task, target branch, active parallel agents if known; local repository state (branch, worktrees, recent commits, open PRs) |
+| Allowed tools | read of git state (status, log, branches, worktrees) and open PRs/issues — explicitly prohibited: `pull`, `fetch`, remote mutations, commits, or file changes |
+| Permitted autonomy | A1 — Propose |
+| Stop criteria | if Step 2 (conflict detection) finds a potential or active conflict — same file touched by another agent or open PR — STOP immediately and report before continuing; do not move to controlled execution without human confirmation |
+| Expected output | this prompt has no standalone `## Expected Output` section — the delivery format is defined inline in "Deliver in PLAN MODE" (9 subsections: files to modify, out-of-scope files, potential conflicts, dependencies, steps, commits, test plan, stop signals, execution contract) and in "Step 5. Status report" of the multi-agent protocol |
+| Minimum evidence | the files-to-modify table includes risk and whether approval is required; the conflict-detection section explicitly documents the presence or absence of overlap with active branches/PRs |
+| Recommended next prompt | `06-01-implementacion-multiagente` once the plan is approved and free of conflicts, to move into controlled execution |
+
+---
+
+## Mandatory Previous Context
+
+> Include the block from file `00-framework.en.md` before this prompt.
+
+---
+
+## Complete Prompt — PLAN MODE
+
+```text
+Objective:
+Operate in PLAN MODE. Do not modify any file. Do not make commits. Do not execute commands that alter the repository or environment state.
+
+Your work in this mode is:
+1. Analyze the current state of the repository related to the task.
+2. Map what files would be modified and why.
+3. Identify risks, potential conflicts, and dependencies.
+4. Propose the detailed implementation plan.
+5. Estimate the scope of the change (lines, files, modules).
+6. Signal what requires human approval before executing.
+7. Define success criteria, evidence, and execution budget.
+8. Identify independent subtasks and dependencies.
+
+Input:
+- issue/task: [REFERENCE OR DESCRIPTION]
+- target branch: [BRANCH]
+- active agents in parallel (if known): [LIST OR "none known"]
+
+Deliver in PLAN MODE:
+
+## Implementation plan
+### 1. Files that would be modified
+| File | Type of change | Risk | Requires approval |
+|---|---|---|---|
+
+### 2. Files that should NOT be touched in this task
+(Explicit list to avoid scope creep)
+
+### 3. Potential conflicts with work in parallel
+- active branches that touch the same files
+- recent changes (last 48h) in scope files
+- open issues or PRs related
+
+### 4. Dependencies and preconditions
+- what must be ready before executing
+- environment variables or secrets needed
+- migrations or data required
+
+### 5. Proposed implementation steps
+Numbered, atomic, with what file changes at each step.
+
+| ID | Task | Depends on | Suggested owner | Verifiable deliverable |
+|---|---|---|---|---|
+
+### 6. Commit strategy
+- estimated number of commits
+- message for each commit (project convention)
+- recommended order
+
+### 7. Test plan
+- tests to write or update
+- how to verify that acceptance criteria are met
+
+### 8. High signals that stop execution
+List of conditions where the agent must pause and escalate to the human:
+- finding [condition A]
+- finding [condition B]
+
+### 9. Execution contract
+- risk level and autonomy mode
+- permitted tools and actions requiring approval
+- file/time/attempt budget
+- completion evidence
+
+Request approval only for actions not pre-authorized by policy or risk level.
+```
+
+---
+
+## Complete Prompt — MULTI-AGENT PROTOCOL
+
+```text
+Objective:
+Before starting any work, execute the multi-agent coordination protocol for this repository.
+
+Step 1. STATE VERIFICATION
+- inspect local status, branch, worktrees, recent changes, and related PRs with environment-compatible commands
+- do not run pull, fetch, remote mutations, or network commands without authorization or confirmed need
+
+Step 2. POTENTIAL CONFLICT DETECTION
+- list the files you would modify in this task
+- verify if any were modified in recent commits
+- verify if there are open PRs that touch the same files
+- if there is conflict: STOP and report before continuing
+
+Step 3. ISOLATION AND OWNERSHIP
+- use an isolated worktree, workspace, or branch when actual concurrency exists
+- register task ID, owner, file scope, and dependencies in the available coordination mechanism
+- do not use empty commits as locks: a branch does not guarantee exclusivity
+- if no coordination mechanism exists, report the risk and reduce scope
+
+Step 4. AGENT COEXISTENCE RULES
+- each subtask has an owner and delivery contract
+- parallel work requires independent deliverables or an explicit reconciliation strategy
+- no agent merges to main/develop without human approval
+- atomic commits — one logical change per commit
+- classify overlap as textual, contractual, or semantic and pause only the affected area
+
+Step 5. STATUS REPORT
+At the end of the plan or execution, report:
+- branch created: [CREATED BRANCH]
+- modified files: [LIST]
+- tests updated: [YES/NO]
+- PR opened: [URL or "pending approval to create"]
+- conflicts detected: [NONE / DESCRIPTION]
+- pending human review: [LIST]
+```
+
+---
+
+## Usage with Standard Formula
+
+```text
+Use the plan mode and multi-agent coordination prompt and adapt it to:
+- repository: [NAME OR URL]
+- task or issue: [REFERENCE]
+- target branch: [BRANCH]
+- active agents in parallel: [LIST OR "none known"]
+- mode: [PLAN ONLY / PLAN + CONTROLLED EXECUTION]
+- documents to review: recent git log, open PRs, AGENTS.md
+- specific output goal: implementation plan with file table + conflict detection + branch reservation
+- depth level: high
+```
+
+---
+
+## Branch Naming Convention by Agent
+
+| Agent | Branch prefix | Example |
+|---|---|---|
+| GitHub Copilot | `copilot/` | `copilot/42/fix-login` |
+| Claude (Anthropic) | `claude/` | `claude/43/refactor-auth` |
+| OpenAI Codex | `codex/` | `codex/44/add-tests` |
+| Windsurf | `windsurf/` | `windsurf/45/update-nginx` |
+| Cursor | `cursor/` | `cursor/46/style-cleanup` |
+| Antigravity | `antigravity/` | `antigravity/47/e2e-flow` |
+| Human / mixed | `feat/`, `fix/`, etc. | `feat/user-profile` |
+
+---
+
+## Execution Traffic Light
+
+| State | Color | Description | Agent action |
+|---|---|---|---|
+| No conflicts, plan approved | 🟢 Green | Area free, clear plan | Proceed with controlled execution |
+| Potential conflict detected | 🟡 Yellow | Another agent modified nearby files | Report, wait for human confirmation |
+| Active conflict confirmed | 🔴 Red | Same file modified in active work | Stop, make no commits, escalate |
+| Critical area (infra/cicd/db) | 🔴 Red | workflows/, migrations/, docker-compose | Always requires explicit human approval |
+
+---
+
+*Source: AI-SDLC Pro (https://prompts.lionsystems.com.mx), CC BY 4.0 license. Adapted to the SKILL.md format: this note was added; the prompt text is unchanged. Version with projects, persistent variables and per-prompt results: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*

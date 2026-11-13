@@ -1,0 +1,202 @@
+# 0-C.1 — Documentar un issue listo para ejecución por agente IA
+
+## Descripción
+
+Prompt para redactar un issue GitHub de alta calidad que pueda ser ejecutado por un agente IA de forma autónoma y controlada: con contexto suficiente, criterios de aceptación verificables, restricciones explícitas, archivos involucrados y checklist de validación humana post-ejecución.
+
+**Cuándo usarlo:** antes de asignar cualquier tarea a un agente IA (Copilot Agent, Claude, Codex, Windsurf), para garantizar que el agente opere con contexto completo y dentro de límites seguros.
+
+---
+
+## Contrato editorial
+
+| Campo | Valor |
+|---|---|
+| Tipo | documentación |
+| Riesgo esperado | medio — este prompt no ejecuta nada, pero el issue que produce es el contrato que gobernará a un agente ejecutor después; un alcance, restricción o nivel de autonomía mal redactado aquí se hereda directamente en la ejecución real |
+| Entradas requeridas | título y tipo del issue, descripción del problema/requerimiento, repositorio y rama destino, ambiente, archivos/módulos involucrados (si se conocen), criterios de aceptación, restricciones, agente asignado, resultado observable esperado, permisos/herramientas autorizadas, presupuesto |
+| Herramientas permitidas | lectura del repositorio para verificar que rutas, comportamiento actual y contexto citados son reales — no debe inventar rutas ni comandos; no crea el issue en GitHub, solo redacta el contenido y sugiere el comando `gh issue create` |
+| Autonomía permitida | A1 — Proponer (redacta el issue y el comando sugerido; publicarlo en GitHub es una acción A3 que queda fuera de este prompt) |
+| Criterios de detención | si la información disponible no permite completar el `## Contrato de ejecución` (modo de autonomía, herramientas, alcance) de forma no ambigua, declarar el issue como "NO apto para agente" en la evaluación de readiness en vez de rellenar valores inventados |
+| Salida esperada | ver `## Salida esperada` |
+| Evidencia mínima | el issue generado incluye las secciones obligatorias (Descripción, Contexto técnico, Criterios de aceptación, Restricciones, Contrato de ejecución, Pruebas requeridas, Evidencia de cumplimiento, Checklist de validación humana) y declara explícitamente el modo de autonomía A0-A3 |
+| Siguiente prompt recomendado | `00-C-02-plan-mode-multiagente` para que el agente asignado ejecute la tarea en modo plan antes de tocar código |
+
+---
+
+## Contexto obligatorio previo
+
+> Incluye el bloque del archivo `00-framework.md` antes de este prompt.
+
+---
+
+## Prompt completo
+
+```text
+Objetivo:
+Redacta un issue GitHub completo y listo para ser ejecutado por un agente IA, siguiendo las mejores prácticas de documentación y gobierno de agentes.
+
+Inputs requeridos:
+- título del issue: [TÍTULO CORTO Y PRECISO]
+- tipo: [feat / fix / refactor / chore / docs / test / security / infra]
+- descripción del problema o requerimiento: [DESCRIPCIÓN EN LENGUAJE NATURAL]
+- repositorio: [REPO] · rama destino: [RAMA OBJETIVO]
+- ambiente: [dev / qa / staging]
+- archivos o módulos involucrados (si se conocen): [LISTA]
+- criterios de aceptación: [LISTA DE CONDICIONES VERIFICABLES]
+- restricciones: [LO QUE EL AGENTE NO PUEDE HACER EN ESTE ISSUE]
+- agente asignado: [Copilot / Claude / Codex / Windsurf / Cursor / Antigravity]
+- resultado observable esperado: [EVIDENCIA QUE DEMUESTRA EL ÉXITO]
+- permisos y herramientas autorizadas: [LECTURA / EDICIÓN / SHELL / GITHUB / BROWSER / OTROS]
+- presupuesto: [TIEMPO / ARCHIVOS / INTENTOS / COSTE, SI APLICA]
+
+Antes de redactar el issue:
+1. Evalúa si el problema está suficientemente definido.
+2. Identifica información faltante, contradicciones y dependencias.
+3. Clasifica el riesgo: bajo, medio o alto.
+4. Determina si la tarea es apta para ejecución autónoma.
+5. No inventes rutas, comandos, criterios ni comportamiento actual.
+
+Restricciones:
+- no inventes criterios de aceptación que el solicitante no haya dado explícitamente; si faltan, decláralos como pendientes en la sección de readiness en vez de completarlos con supuestos propios,
+- si el alcance es ambiguo (archivos afectados, comportamiento esperado, ambiente destino), señala la ambigüedad y solicita precisión antes de redactar el issue final — no avances con una interpretación no confirmada,
+- no asignes en el `## Contrato de ejecución` un modo de autonomía (A0-A3) superior al que amerita el riesgo real de la tarea; ante la duda, asigna el nivel más conservador y explica por qué,
+- no crees el issue en GitHub — este prompt solo redacta el contenido y el comando sugerido; publicarlo es una acción A3 que requiere aprobación humana explícita fuera de este prompt.
+
+Genera el issue con las siguientes secciones:
+
+## Descripción
+Explicación clara y precisa del problema o requerimiento. Sin ambigüedades.
+- comportamiento actual (si es un fix)
+- comportamiento esperado
+- contexto de negocio relevante
+
+## Contexto técnico
+- rama: [BRANCH]
+- ambiente: [AMBIENTE]
+- archivos clave involucrados (con ruta relativa)
+- dependencias o servicios relacionados
+- commits o PRs relacionados (si aplica)
+
+## Criterios de aceptación
+Lista numerada, cada uno verificable de forma objetiva por el agente y por el revisor humano:
+- [ ] 1. [CRITERIO CONCRETO Y MEDIBLE]
+- [ ] 2. ...
+
+## Restricciones para el agente
+Lo que el agente NO debe hacer en el contexto de este issue:
+- no modificar [ARCHIVOS/MÓDULOS fuera del alcance]
+- no ejecutar [ACCIONES DE ALTO RIESGO]
+- no alterar configuraciones de [ÁREA CRÍTICA]
+- parar y escalar si encuentra: [CONDICIÓN DE ESCALACIÓN]
+
+## Contrato de ejecución
+- modo autorizado: [A0 análisis / A1 propuesta / A2 ejecución controlada / A3 publicación]
+- herramientas autorizadas: [LISTA]
+- herramientas prohibidas: [LISTA]
+- archivos o módulos dentro del alcance: [LISTA]
+- archivos o módulos fuera del alcance: [LISTA]
+- acciones que requieren aprobación: [LISTA]
+- presupuesto de ejecución: [LÍMITES]
+- condiciones de detención: [LISTA]
+
+## Pruebas requeridas
+Qué pruebas debe escribir o actualizar el agente:
+- tipo de prueba (unitaria / integración / e2e / humo)
+- cobertura mínima esperada
+- archivo(s) de prueba a crear o modificar
+
+## Evidencia de cumplimiento
+Para cada criterio de aceptación indica la evidencia esperada:
+- prueba y resultado;
+- ruta y línea relevante;
+- captura, traza o log cuando aplique;
+- estado de CI o validación remota cuando sea obligatorio.
+
+No se permite marcar el issue como completado sólo por haber modificado código.
+
+## Checklist de validación humana (post-ejecución)
+Revisión que debe hacer el humano antes de hacer merge:
+- [ ] El PR solo toca los archivos del alcance definido
+- [ ] Los criterios de aceptación fueron satisfechos con evidencia
+- [ ] No hay secretos, credenciales ni tokens en el diff
+- [ ] Los tests pasan en verde (CI verde)
+- [ ] El código sigue las convenciones del proyecto
+- [ ] No se instalaron dependencias nuevas sin justificación
+- [ ] No hay cambios en workflows, migraciones ni archivos de infraestructura no autorizados
+
+## Evaluación de readiness
+- claridad del objetivo: [ALTA / MEDIA / BAJA]
+- criterios verificables: [SÍ / PARCIAL / NO]
+- dependencias disponibles: [SÍ / PARCIAL / NO]
+- permisos definidos: [SÍ / NO]
+- riesgo: [BAJO / MEDIO / ALTO]
+- apto para agente: [SÍ / SÍ CON APROBACIONES / NO]
+- información faltante: [LISTA]
+
+## Labels sugeridos
+[tipo], [agente-ia], [ambiente], [prioridad]
+```
+
+---
+
+## Uso con fórmula estándar
+
+```text
+Usa el prompt de issue para agente IA y adáptalo a:
+- repositorio: [NOMBRE O URL]
+- título del issue: [TÍTULO]
+- tipo: [TIPO DE ISSUE]
+- descripción del requerimiento: [DESCRIPCIÓN]
+- archivos involucrados: [LISTA]
+- criterios de aceptación: [CRITERIOS]
+- restricciones: [RESTRICCIONES]
+- agente asignado: [AGENTE]
+- nivel de autonomía: [NIVEL DE AUTONOMÍA]
+- objetivo puntual de salida: issue completo listo para crear en GitHub con gh issue create
+- nivel de profundidad: alto
+```
+
+---
+
+## Salida esperada
+
+Issue redactado con todas las secciones completas, más el comando para crearlo directamente:
+
+```bash
+gh issue create \
+  --repo [ORG/REPO] \
+  --title "[TIPO DE ISSUE]: [TÍTULO]" \
+  --body-file issue-draft.md \
+  --label "[tipo],[agente-ia],[prioridad]" \
+  --assignee "@me"
+```
+
+**Ejemplo aplicado a este proyecto:**
+
+```bash
+gh issue create \
+  --repo dleon/ai-sdlc-prompts \
+  --title "fix: build.py no valida que exista el par ES/EN antes de generar el índice" \
+  --body-file issue-draft.md \
+  --label "fix,agente-ia,alta" \
+  --assignee "@me"
+```
+
+Con `## Contrato de ejecución` → modo autorizado: A2 (ejecución controlada, alcance limitado a `build.py` y `tests/test_build.py`); y `## Evaluación de readiness` → claridad ALTA, criterios verificables SÍ, riesgo MEDIO, apto para agente SÍ CON APROBACIONES (requiere revisión humana del CHANGELOG antes de merge).
+
+---
+
+## Antipatrones a evitar
+
+| Antipatrón | Consecuencia | Solución |
+|---|---|---|
+| "Arregla el login" sin más contexto | El agente asume ruta incorrecta | Incluir archivos involucrados y comportamiento esperado |
+| Sin criterios de aceptación | El agente no sabe cuándo terminó | Criterios numerados y verificables |
+| Sin restricciones | El agente toca archivos fuera del alcance | Lista explícita de lo que NO debe tocar |
+| Sin checklist humano | PR se mergea sin revisar output del agente | Sección de validación humana obligatoria |
+| Nivel de autonomía no definido | El agente asume autonomía total | Siempre declarar el `modo autorizado` (A0-A3) en `## Contrato de ejecución` |
+
+---
+
+*Fuente: AI-SDLC Pro (https://prompts.lionsystems.com.mx), licencia CC BY 4.0. Adaptado al formato SKILL.md: se añadió esta nota; el texto del prompt no cambió. Versión con proyectos, variables persistentes y resultados por prompt: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills*

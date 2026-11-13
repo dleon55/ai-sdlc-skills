@@ -1,0 +1,20 @@
+{
+  "name": "ai-sdlc-en",
+  "version": "1.0.0",
+  "description": "112 AI-SDLC prompts in English as per-phase skills (analysis, design, testing, review, operations, security…). Projects and persistent variables in the Pro plan: https://prompts.lionsystems.com.mx/precios.html?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills",
+  "author": {
+    "name": "Lion Systems",
+    "url": "https://prompts.lionsystems.com.mx"
+  },
+  "homepage": "https://prompts.lionsystems.com.mx/?utm_source=github&utm_medium=skills&utm_campaign=ai-sdlc-skills",
+  "repository": "https://github.com/dleon55/ai-sdlc-skills",
+  "license": "CC-BY-4.0",
+  "keywords": [
+    "sdlc",
+    "prompts",
+    "software-engineering",
+    "testing",
+    "code-review",
+    "en"
+  ]
+}
